@@ -1,7 +1,8 @@
 import os
 import gymnasium as gym
 import PyFlyt.gym_envs  # noqa side-effect import
-import train_angle_error_v0  # noqa side-effect import
+# import QuadX_train_angle_error_v0  # noqa side-effect import
+import VTOL_train_angle_error_v0  # noqa side-effect import
 
 import torch as th
 from stable_baselines3 import PPO
@@ -35,7 +36,7 @@ class RewardPrintCallback(BaseCallback):
             if self.ep_returns:
                 mean_r = sum(self.ep_returns) / len(self.ep_returns)
                 print(f"[{self.n_calls:>8}] episodes={self.ep_count:<5} "
-                      f"mean rewardaa={mean_r:8.2f}")
+                      f"mean reward ={mean_r:8.2f}")
         return True
 
 
@@ -44,12 +45,12 @@ class RewardPrintCallback(BaseCallback):
 # ------------------------------------------------------------------ #
 def make_env():
     """Factory for the training/eval environments."""
-    return gym.make("QuadX-AngleErr-v0", render_mode=None)
+    return gym.make("VTOL-AngleErr-v0", render_mode=None)
 
 
 def make_eval_env():
     """Factory for the training/eval environments."""
-    return gym.make("QuadX-AngleErr-v0", render_mode=None)
+    return gym.make("VTOL-AngleErr-v0", render_mode=None)
 
 
 def lr_schedule(progress):
@@ -69,7 +70,7 @@ if __name__ == "__main__":
         eval_env,
         best_model_save_path="checkpoints",  # → checkpoints/best_model.zip
         log_path="checkpoints/eval_logs",
-        eval_freq=10_000,
+        eval_freq=100_000,
         n_eval_episodes=20,
         deterministic=True,
         render=False,
@@ -91,7 +92,7 @@ if __name__ == "__main__":
         verbose=0
     )
 
-    total_timesteps = 12_000_000
+    total_timesteps = 10_000_000
 
     callback = CallbackList([
         RewardPrintCallback(check_freq=1_000, verbose=1),

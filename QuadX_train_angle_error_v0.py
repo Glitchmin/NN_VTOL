@@ -90,7 +90,7 @@ class QuadXAngleErrorEnv(QuadXBaseEnv):
         sp_t, sp_roll, sp_pitch, sp_yaw_rate = self.radio_cmd
 
         err = np.array([
-            np.sum(self.action),
+            np.sum(np.abs(np.clip((self.action+1)/2, 0, 1) - sp_t)),
             sp_roll - roll,
             sp_pitch - pitch,
             sp_yaw_rate - yaw_rate
@@ -115,7 +115,8 @@ class QuadXAngleErrorEnv(QuadXBaseEnv):
 
         self.prev_action = self.action.copy()
         self.action = action
-        self.env.set_setpoint(0, np.clip(self.radio_cmd[0] + self.action, 0, 1))
+        # self.env.set_setpoint(0, np.clip(self.radio_cmd[0] + self.action, 0, 1))
+        self.env.set_setpoint(0, np.clip((self.action+1)/2, 0, 1))
 
         self.reward = 0.1
         for _ in range(self.env_step_ratio):
@@ -151,11 +152,13 @@ class QuadXAngleErrorEnv(QuadXBaseEnv):
 
         sp_t, sp_roll, sp_pitch, sp_yaw_rate = self.radio_cmd
 
-        e_t = np.sum(self.action)
+        # e_t = np.sum(self.action)
+        e_t = np.sum(np.abs(np.clip((self.action+1)/2, 0, 1) - sp_t))
         e_roll = roll - sp_roll
         e_pitch = pitch - sp_pitch
         e_yaw = yaw_rate - sp_yaw_rate
         e_over = np.sum(self.radio_cmd[0] + self.action < 0) + np.sum(self.radio_cmd[0] + self.action > 1)
+        e_over = 0
 
         if self.render_mode == "human" or self.episode_idx % 200 == 0:
             print(
@@ -171,14 +174,14 @@ class QuadXAngleErrorEnv(QuadXBaseEnv):
                 f"pitch {np.rad2deg(pitch):5.1f}°  "
                 f"yaw rate{np.rad2deg(yaw_rate):6.1f}°/s  "
                 f"alt {self.env.state(0)[-1][2]:5.1f} m"
-                f" | ACTION: {np.clip(self.radio_cmd[0] + self.action, 0, 1)}"
+                f" | ACTION: {np.clip((self.action+1)/2, 0, 1)}"
             )
 
         err_vec = np.abs(np.array([e_t, e_roll, e_pitch, e_yaw, e_over], dtype=np.float32))
 
         w = np.array([.2, .2, .2, .07, 1], dtype=np.float32)
         err_vec *= w
-        self.reward -= np.sum(np.abs(err_vec)) - 1
+        self.reward -= np.sum(np.abs(err_vec)) - .5
 
         if self.render_mode == "human" or self.episode_idx % 200 == 0:
             print(f"reward t {-err_vec[0]:5.1f}  "
@@ -193,6 +196,6 @@ from gymnasium.envs.registration import register
 
 register(
     id="QuadX-AngleErr-v0",
-    entry_point="train_angle_error_v0:QuadXAngleErrorEnv",
+    entry_point="QuadX_train_angle_error_v0:QuadXAngleErrorEnv",
     max_episode_steps=int(120 * 2),
 )
